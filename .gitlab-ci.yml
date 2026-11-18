@@ -73,23 +73,22 @@ deployToStaging:
   resource_group: staging
 
   script:
-    - |
-      set -e
+    - echo "Deploying application to staging server..."
 
-      printf '%s' "$CI_REGISTRY_PASSWORD" | ssh \
-        -o StrictHostKeyChecking=yes \
-        "$DEPLOY_USER@$STAGING_HOST" \
-        "docker login '$CI_REGISTRY' \
-        -u '$CI_REGISTRY_USER' \
-        --password-stdin &&
-        docker pull '$IMAGE' &&
-        (docker rm -f oklabs-app || true) &&
-        docker run -d \
-          --name oklabs-app \
-          --restart unless-stopped \
-          -p 80:80 \
-          '$IMAGE'"
+    # 1. Login to Docker Registry on staging server
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD"
 
+    # 2. Pull latest Docker image
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker pull $IMAGE"
+
+    # 3. Remove existing container
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker rm -f oklabs-app || true"
+
+    # 4. Start new container
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d --name oklabs-app --restart unless-stopped -p 80:80 $IMAGE"
+
+    - echo "Staging deployment completed successfully!"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
+
