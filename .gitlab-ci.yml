@@ -1,17 +1,5 @@
 stages:
   - basicSetup
-
-basicSetup:
-  stage: basicSetup
-  script:
-    - whoami
-    - pwd
-    - cat /etc/os-release
-    - hostname -I
-    - curl -4 ifconfig.me
-anil@OKLABS:~/nov18$ cat ~/nov16_2026/.gitlab-ci.yml
-stages:
-  - basicSetup
   - buildImage
   - pushImage
   - deployToStaging
