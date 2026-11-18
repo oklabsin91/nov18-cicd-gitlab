@@ -9,3 +9,99 @@ basicSetup:
     - cat /etc/os-release
     - hostname -I
     - curl -4 ifconfig.me
+anil@OKLABS:~/nov18$ cat ~/nov16_2026/.gitlab-ci.yml
+stages:
+  - basicSetup
+  - buildImage
+  - pushImage
+  - deployToStaging
+
+basicSetup:
+  stage: basicSetup
+  script:
+    - whoami
+    - pwd
+    - cat /etc/os-release
+    - curl -4 ifconfig.me
+buildImage:
+  stage: buildImage
+  script:
+    - docker image ls
+    - docker compose -f docker-compose.yaml build
+    - docker image ls
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+pushImage:
+  stage: pushImage
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+    - docker compose -f docker-compose.yaml push
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+
+checkVariables:
+  stage: basicSetup
+  script:
+    - |
+      echo "========== GITLAB REF CHECK =========="
+
+      echo "Branch: $CI_COMMIT_BRANCH"
+      echo "Protected ref: $CI_COMMIT_REF_PROTECTED"
+
+      echo "========== SSH VARIABLE CHECK =========="
+
+      if [ -n "${SSH_PRIVATE_KEY:-}" ]; then
+        echo "SSH_PRIVATE_KEY: AVAILABLE"
+
+        if [ -f "$SSH_PRIVATE_KEY" ]; then
+          echo "SSH_PRIVATE_KEY file exists"
+        else
+          echo "SSH_PRIVATE_KEY file does not exist"
+        fi
+      else
+        echo "SSH_PRIVATE_KEY: EMPTY"
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+
+# ==========================================
+# 4. DEPLOY TO STAGING SERVER
+# ==========================================
+
+
+deployToStaging:
+  stage: deployToStaging
+
+  needs:
+    - pushImage
+
+  environment:
+    name: staging
+    url: https://staging-nov16.oklabs.in
+
+  resource_group: staging
+
+  script:
+    - |
+      set -e
+
+      printf '%s' "$CI_REGISTRY_PASSWORD" | ssh \
+        -o StrictHostKeyChecking=yes \
+        "$DEPLOY_USER@$STAGING_HOST" \
+        "docker login '$CI_REGISTRY' \
+        -u '$CI_REGISTRY_USER' \
+        --password-stdin &&
+        docker pull '$IMAGE' &&
+        (docker rm -f oklabs-app || true) &&
+        docker run -d \
+          --name oklabs-app \
+          --restart unless-stopped \
+          -p 80:80 \
+          '$IMAGE'"
+
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
