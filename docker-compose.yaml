@@ -1,0 +1,9 @@
+services:
+  myservie1:
+    image: "${CI_REGISTRY_IMAGE}/myservice1:t${CI_PIPELINE_IID}"  
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    #ports:
+    #  - "8080:80"

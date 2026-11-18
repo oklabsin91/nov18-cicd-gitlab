@@ -1,0 +1,11 @@
+stages:
+  - basicSetup
+
+basicSetup:
+  stage: basicSetup
+  script:
+    - whoami
+    - pwd
+    - cat /etc
+    - hostname -I
+    - curl -4 ifconfig.me
