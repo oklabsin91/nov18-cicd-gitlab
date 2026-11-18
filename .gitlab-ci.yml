@@ -76,9 +76,9 @@ deployToStaging:
     - echo "Deploying application to staging server..."
     
     # Define image (must match docker-compose.yaml)
-    - echo "Docker Image Account: $CI_REGISTRY_IMAGE"
+    - 'echo "Docker Image Account: $CI_REGISTRY_IMAGE"'
     - IMAGE="${CI_REGISTRY_IMAGE}/myservice1:t${CI_PIPELINE_IID}"
-    - echo "Docker Image: $IMAGE"
+    - 'echo "Docker Image: $IMAGE"'
 
     # 1. Login to Docker Registry on staging server
     - ssh $DEPLOY_USER@$STAGING_HOST "docker login $CI_REGISTRY -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD"
