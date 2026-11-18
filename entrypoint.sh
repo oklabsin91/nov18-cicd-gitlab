@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 set -Eeuo pipefail
@@ -7,8 +8,20 @@ echo "         OKLABS APPLICATION"
 echo "========================================"
 
 # ========================================
-# 1. ENVIRONMENT VARIABLES
+# 1. LOAD ENVIRONMENT FILE
 # ========================================
+
+ENV_FILE="/var/www/html/.env"
+
+if [[ -f "$ENV_FILE" ]]; then
+    echo "Loading environment variables from $ENV_FILE"
+
+    set -a
+    source "$ENV_FILE"
+    set +a
+else
+    echo "WARNING: .env file not found!"
+fi
 
 APP_ENV="${APP_ENV:-production}"
 FQDN="${FQDN:-}"
@@ -48,9 +61,7 @@ echo "Preparing temporary HTTP VirtualHost..."
 
 cat > /etc/apache2/sites-available/000-default.conf <<EOF
 <VirtualHost *:80>
-
     ServerName $FQDN
-
     DocumentRoot $WEBROOT
 
     Alias /.well-known/acme-challenge/ $WEBROOT/.well-known/acme-challenge/
@@ -63,7 +74,6 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOF
     <Directory "$WEBROOT/.well-known/acme-challenge/">
         Require all granted
     </Directory>
-
 </VirtualHost>
 EOF
 
@@ -80,7 +90,6 @@ APACHE_PID=$!
 
 trap 'kill -TERM "$APACHE_PID" 2>/dev/null || true; wait "$APACHE_PID" || true; exit 0' TERM INT
 
-# Wait for Apache to become available
 for i in {1..30}; do
 
     if curl -fsS http://127.0.0.1/ >/dev/null; then
@@ -93,7 +102,6 @@ for i in {1..30}; do
     fi
 
     sleep 1
-
 done
 
 # ========================================
@@ -129,24 +137,15 @@ echo "Generating Apache HTTPS VirtualHost..."
 
 cat > /etc/apache2/sites-available/000-default.conf <<EOF
 
-# ========================================
-# HTTP VIRTUAL HOST
-# ========================================
-
 <VirtualHost *:80>
 
     ServerName $FQDN
-
     DocumentRoot $WEBROOT
 
     Alias /.well-known/acme-challenge/ $WEBROOT/.well-known/acme-challenge/
 
     <Directory "$WEBROOT">
         AllowOverride All
-        Require all granted
-    </Directory>
-
-    <Directory "$WEBROOT/.well-known/acme-challenge/">
         Require all granted
     </Directory>
 
@@ -157,21 +156,14 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOF
 
 </VirtualHost>
 
-
-# ========================================
-# HTTPS VIRTUAL HOST
-# ========================================
-
 <VirtualHost *:443>
 
     ServerName $FQDN
-
     DocumentRoot $WEBROOT
 
     SSLEngine on
 
     SSLCertificateFile $CERT_PATH
-
     SSLCertificateKeyFile $KEY_PATH
 
     <Directory "$WEBROOT">
@@ -180,7 +172,6 @@ cat > /etc/apache2/sites-available/000-default.conf <<EOF
     </Directory>
 
     ErrorLog \${APACHE_LOG_DIR}/ssl-error.log
-
     CustomLog \${APACHE_LOG_DIR}/ssl-access.log combined
 
 </VirtualHost>
@@ -207,21 +198,15 @@ echo "Starting SSL renewal monitor..."
 
 (
     while true; do
-
         sleep 12h
 
         echo "Checking Let's Encrypt certificate renewal..."
 
         if certbot renew --quiet; then
-
             echo "Certificate renewal check completed"
-
             apache2ctl graceful
-
         else
-
             echo "WARNING: Certificate renewal failed"
-
         fi
 
     done
@@ -231,10 +216,10 @@ echo "========================================"
 echo "       OKLABS APPLICATION READY"
 echo "========================================"
 
-echo "HTTP  : Redirecting to HTTPS"
-echo "HTTPS : https://$FQDN"
-echo "SSL   : Enabled"
+echo "Environment: $APP_ENV"
+echo "HTTP: Redirecting to HTTPS"
+echo "HTTPS: https://$FQDN"
+echo "SSL: Enabled"
 
-# Keep Apache running in foreground
 wait "$APACHE_PID"
 
