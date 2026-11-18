@@ -14,9 +14,6 @@ RUN a2enmod ssl rewrite headers
 # Copy application
 COPY index.html /var/www/html/
 
-# Copy environment configuration
-COPY .env /var/www/.env
-
 # Copy entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 

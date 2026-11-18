@@ -7,38 +7,18 @@ echo "         OKLABS APPLICATION"
 echo "========================================"
 
 # ========================================
-# 1. LOAD ENVIRONMENT FILE
+# 1. READ ENVIRONMENT VARIABLES
 # ========================================
 
-ENV_FILE="/var/www/.env"
-
-if [[ -f "$ENV_FILE" ]]; then
-
-    echo "Loading environment variables from $ENV_FILE"
-
-    set -a
-    source "$ENV_FILE"
-    set +a
-
-else
-
-    echo "ERROR: Environment file not found: $ENV_FILE"
-    exit 1
-
-fi
-
-APP_ENV="${APP_ENV:-production}"
-FQDN="${FQDN:-}"
-LETSENCRYPT_EMAIL="${LETSENCRYPT_EMAIL:-}"
+: "${APP_ENV:?ERROR: APP_ENV is missing}"
+: "${FQDN:?ERROR: FQDN is missing}"
+: "${LETSENCRYPT_EMAIL:?ERROR: LETSENCRYPT_EMAIL is missing}"
 
 echo "Environment: $APP_ENV"
 echo "FQDN: $FQDN"
 echo "Email: $LETSENCRYPT_EMAIL"
 
-if [[ -z "$FQDN" || -z "$LETSENCRYPT_EMAIL" ]]; then
-    echo "ERROR: FQDN or LETSENCRYPT_EMAIL is missing"
-    exit 1
-fi
+echo "Environment variables loaded successfully."
 
 # ========================================
 # 2. SSL PATHS

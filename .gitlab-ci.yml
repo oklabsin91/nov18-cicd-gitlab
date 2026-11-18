@@ -90,7 +90,7 @@ deployToStaging:
     - ssh $DEPLOY_USER@$STAGING_HOST "docker rm -f oklabs-app || true"
 
     # 4. Start new container
-    - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt  $IMAGE"
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d -e APP_ENV=\"$APP_ENV\" -e FQDN=\"$FQDN\" -e LETSENCRYPT_EMAIL=\"$LETSENCRYPT_EMAIL\" --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt  $IMAGE"
 
     - echo "Staging deployment completed successfully!"
 
@@ -148,7 +148,7 @@ deployToProd:
     - ssh "$DEPLOY_USER@$PROD_HOST" "docker rm -f oklabs-app || true"
 
     # 4. Start new production container
-    - ssh $DEPLOY_USER@$PROD_HOST "docker run -d --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt '$IMAGE' "
+    - ssh $DEPLOY_USER@$PROD_HOST "docker run -d -e APP_ENV=\"$APP_ENV\" -e FQDN=\"$FQDN\" -e LETSENCRYPT_EMAIL=\"$LETSENCRYPT_EMAIL\" --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt '$IMAGE' "
 
     - echo "Production deployment completed successfully!"
 
