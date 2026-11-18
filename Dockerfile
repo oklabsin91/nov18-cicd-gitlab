@@ -17,6 +17,10 @@ COPY index.html /var/www/html/
 # Copy entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
+
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && \
+    chmod 755 /usr/local/bin/entrypoint.sh
+
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80 443
