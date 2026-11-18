@@ -3,7 +3,7 @@ stages:
   - buildImage
   - pushImage
   - deployToStaging
-
+  - deployToProd
 basicSetup:
   stage: basicSetup
   script:
@@ -68,7 +68,7 @@ deployToStaging:
 
   environment:
     name: staging
-    url: https://staging-nov16.oklabs.in
+    url: https://staging-nov18.oklabs.in
 
   resource_group: staging
 
@@ -93,6 +93,57 @@ deployToStaging:
     - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt  $IMAGE"
 
     - echo "Staging deployment completed successfully!"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+
+# ==========================================
+# 5. DEPLOY TO PRODUCTION SERVER
+# ==========================================
+
+deployToProd:
+  stage: deployToProd
+
+  needs:
+    - deployToStaging
+
+  environment:
+    name: production
+    url: https://prod-nov18.oklabs.in
+
+  resource_group: production
+
+  script:
+    - echo "Deploying application to production server..."
+
+    # 1. Login to Docker Registry on production server
+    - |
+      printf '%s' "$CI_REGISTRY_PASSWORD" | ssh "$DEPLOY_USER@$PROD_HOST" \
+        "docker login '$CI_REGISTRY' \
+        -u '$CI_REGISTRY_USER' \
+        --password-stdin"
+
+    # 2. Pull the same image deployed to staging
+    - ssh "$DEPLOY_USER@$PROD_HOST" "docker pull '$IMAGE'"
+
+    # 3. Remove existing production container
+    - ssh "$DEPLOY_USER@$PROD_HOST" "docker rm -f oklabs-app || true"
+
+    # 4. Start new production container
+    - |
+      ssh "$DEPLOY_USER@$PROD_HOST" "
+        docker run -d \
+          --name oklabs-app \
+          --restart unless-stopped \
+          --network host \
+          -v /opt/oklabs-prod/.env:/var/www/.env:ro \
+          -v oklabs-letsencrypt:/etc/letsencrypt \
+          -v oklabs-letsencrypt-lib:/var/lib/letsencrypt \
+          '$IMAGE'
+      "
+
+    - echo "Production deployment completed successfully!"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
