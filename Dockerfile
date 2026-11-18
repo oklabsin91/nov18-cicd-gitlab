@@ -14,14 +14,15 @@ RUN a2enmod ssl rewrite headers
 # Copy application
 COPY index.html /var/www/html/
 
+# Copy environment configuration
+COPY .env /var/www/.env
+
 # Copy entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
-
+# Fix permissions and line endings
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && \
     chmod 755 /usr/local/bin/entrypoint.sh
-
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80 443
 
