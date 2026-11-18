@@ -119,12 +119,28 @@ deployToProd:
 
     # 1. Login to Docker Registry on production server
     - |
-
       printf '%s' "$CI_REGISTRY_PASSWORD" | ssh "$DEPLOY_USER@$PROD_HOST" \
         "docker login '$CI_REGISTRY' \
         -u '$CI_REGISTRY_USER' \
         --password-stdin"
 
+        echo "========== IMAGE DEBUG =========="
+      echo "CI_REGISTRY_IMAGE: ${CI_REGISTRY_IMAGE:-EMPTY}"
+      echo "CI_PIPELINE_IID: ${CI_PIPELINE_IID:-EMPTY}"
+
+      IMAGE="${CI_REGISTRY_IMAGE}/myservice1:t${CI_PIPELINE_IID}"
+
+      echo "IMAGE: $IMAGE"
+
+      if [ -z "${CI_REGISTRY_IMAGE:-}" ]; then
+        echo "ERROR: CI_REGISTRY_IMAGE is empty"
+        exit 1
+      fi
+
+      if [ -z "${CI_PIPELINE_IID:-}" ]; then
+        echo "ERROR: CI_PIPELINE_IID is empty"
+        exit 1
+      fi
     # 2. Pull the same image deployed to staging
     - ssh "$DEPLOY_USER@$PROD_HOST" "docker pull '$IMAGE'"
 
