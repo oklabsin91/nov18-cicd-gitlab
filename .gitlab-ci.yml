@@ -90,7 +90,7 @@ deployToStaging:
     - ssh $DEPLOY_USER@$STAGING_HOST "docker rm -f oklabs-app || true"
 
     # 4. Start new container
-    - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d --name oklabs-app --restart unless-stopped -p 80:80 $IMAGE"
+    - ssh $DEPLOY_USER@$STAGING_HOST "docker run -d --name oklabs-app --restart unless-stopped --network host -v oklabs-letsencrypt:/etc/letsencrypt -v oklabs-letsencrypt-lib:/var/lib/letsencrypt  $IMAGE"
 
     - echo "Staging deployment completed successfully!"
 
